@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+
+{% block main %}
+    <nav class="navbar navbar-light bg-light">
+        <div class="container-fluid">
+            <form class="d-flex">
+                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                <button class="btn btn-outline-success" type="submit">Search</button>
+            </form>
+            <form class="d-flex">
+                <a href="/friends/add" class="btn btn-primary justify-content-md-end form-control me-2" role="button">+</a>
+            </form>
+        </div>
+    </nav>
+    <br>
+    <ul class="list-group">
+        {% for id in senders %}
+            <li class="list-group-item d-flex justify-content-between align-items-center list-group-item-success">
+                A friend request from: {{ senders[id] }}
+                <span>            
+                    <a href="{{ url_for('friends_accept', sender_id=id) }}" class="btn me-md-2 btn-outline-dark" type="button" role="button">Accept</a>
+                    <a href="{{ url_for('friends_reject', sender_id=id) }}" class="btn btn-outline-danger" type="button" role="button">Reject</a>             
+                </span> 
+            </li> 
+        {% endfor %}  
+    </ul>
+    <br>
+    <ul class="list-group"> 
+        {% for friend_name in friends_names %}      
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ friend_name }}
+                <span>
+                    <button type="button" class="btn btn-success me-md-2">Chat</button>
+                    <button type="button" class="btn btn-danger">Delete</button>
+                </span>  
+            </li>  
+        {% endfor %}        
+    </ul>
+
+    {% if add_success: %}
+        <div class="alert alert-success" role="alert">
+            Sent request successfully!
+        </div>
+    {% endif %}    
+
+{% endblock %}

@@ -1,0 +1,25 @@
+CREATE TABLE IF NOT EXISTS users(
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    username TEXT NOT NULL,
+    nickname TEXT,
+    hash TEXT NOT NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS friends_add(
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    from_id INTEGER NOT NULL,
+    to_id INTEGER NOT NULL,
+    UNIQUE(from_id,to_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS friends_list(
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    fone INTEGER NOT NULL,
+    ftwo INTEGER NOT NULL,
+    UNIQUE(fone,ftwo)
+);
+
+
+

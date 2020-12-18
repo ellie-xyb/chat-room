@@ -1,0 +1,12 @@
+@media(min-width: 400px) 
+{
+    .col-max-400 {
+        flex: 0 0 auto;
+        width: 400px;
+    }
+}
+
+.app-title
+{
+    color: rgb(236, 18, 18);
+}

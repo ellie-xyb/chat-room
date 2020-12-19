@@ -151,15 +151,11 @@ def register():
 @login_required
 def friends():
 
-    # Create 2 lists to keep user's friends names and ids
-    friends_ids = []
-    friends_names = []
-
     # Connect to db and check if there are friend requests
     db = get_db()
     c = db.cursor() 
-    rows = c.execute("SELECT from_id FROM friends_add WHERE to_id=?",[session["user_id"]]).fetchall()
-        
+    rows = c.execute("SELECT from_id FROM friends_add WHERE to_id=?",[session["user_id"]]).fetchall() 
+
     # The way to make a list of dictionary(called object in js)
     # senders = []
     # sender = {}
@@ -167,6 +163,8 @@ def friends():
     # sender["name"] = new_rows[0]["username"]
     # senders.append(sender)
 
+
+    #--------get all friend requests part----------
     # Create a dictionay
     senders = {} 
 
@@ -186,6 +184,10 @@ def friends():
             except:
                 return "failed to get friend requesters"
 
+    #--------get friends list part----------
+    # Create 2 lists to keep user's friends names and ids
+    friends_ids = []
+    friends_names = []
 
     # Get all user's friends from friends_list table   
     try:
@@ -208,12 +210,59 @@ def friends():
             print(e)
             return "failed to make friends' names"            
 
+    #--------search friend part----------
 
+    # Create a dictionary/(called object in js) with related_ids as key to related_names
+    related_results = {}
+    # Create a list to keep all the related ids
+    related_ids = []
+    # seperate the related ids and create 3 lists to keep them  
+    are_friends = [] 
+    not_yet = [] 
+    userself = []
+
+    # Get value of the search input when user try to search other users
+    search_name = request.args.get("searchall")
+        
+    if search_name:
+        search_name = '%' + search_name + '%'
+
+    # Get all the related like usernames from db
+    try:
+        related_userrows = c.execute("SELECT username,id FROM users WHERE username LIKE ?",
+                                    (search_name,)).fetchall()                           
+        for result in related_userrows:
+            # append the result to each list
+            related_ids.append(result["id"])
+
+            # add key and value into dictionary related_results
+            related_results[result["id"]] = result["username"]
+
+        # Seperate the related_results to 1-(friends) and 2-(not friends yet)
+
+        # reuse friends_ids list to seperate the related_ids result
+        for related_id in related_ids:
+            if related_id == session["user_id"]:
+                userself.append(related_id)
+            elif related_id in friends_ids:
+                are_friends.append(related_id)
+            else:
+                not_yet.append(related_id)
+            
+    except Exception as e:
+        print(e)
+        return "There is no result"    
+
+        
+    #--------show send friend request successfully part----------
     #add /friends?=add_success to show successfully add
     add_success = request.args.get("add_success") == "true"
     
     return render_template("friends.html", add_success = add_success, 
-                            senders = senders, friends_names = friends_names)    
+                            senders = senders, friends_names = friends_names, 
+                            related_results = related_results, bool = bool,
+                            are_friends = are_friends, not_yet = not_yet, 
+                            search_name = search_name, userself = userself)    
 
 
 @app.route("/friends/add", methods=["GET", "POST"])
@@ -262,8 +311,28 @@ def friends_add():
               
     else:        
         # User reached route via GET
-        return render_template("friends_add.html")     
+        return render_template("friends_add.html")       
 
+
+@app.route("/friends/sendfrequest/<the_to_id>")
+@login_required
+def friends_send_request(the_to_id):   
+
+    # Sending friend request straightly without through '+' mark      
+    db = get_db()
+    c = db.cursor()
+    try:
+        c.execute("INSERT INTO friends_add (from_id, to_id) VALUES (?, ?)",
+                   [session["user_id"], the_to_id])
+        db.commit() 
+    except sqlite3.IntegrityError:
+        pass                     
+    except Exception as e: 
+        print(e)
+        return "failed to send request"
+
+    # Redirect user to friends_add page
+    return redirect("/friends?add_success=true")                
 
 @app.route("/friends/accept/<sender_id>")
 @login_required

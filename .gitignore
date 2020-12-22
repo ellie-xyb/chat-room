@@ -2,3 +2,4 @@
 /.vscode
 /venv
 /chatroom.db
+/test-data.sql

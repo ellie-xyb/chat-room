@@ -28,8 +28,8 @@
             <li class="list-group-item d-flex justify-content-between align-items-center fst-italic fs-4 fw-bold rounded-pill border-primary text-primary">
                 {{ related_results[is_friend_id] }}                  
                     <span>
-                        <button type="button" class="btn btn-outline-success me-md-2">Chat</button>
-                        <button type="button" class="btn btn-outline-danger">Remove</button>
+                        <a href="{{ url_for('startchat', friend_id=is_friend_id) }}" class="btn btn-success me-md-2" type="button" role="button">Chat</a>        
+                        <a href="{{ url_for('friends_remove', friend_id=is_friend_id) }}" class="btn btn-outline-danger" type="button" role="button">Remove</a>             
                     </span>    
             </li>  
         {% endfor %}  
@@ -56,12 +56,12 @@
     </ul>
     <br>
     <ul class="list-group"> 
-        {% for friend_name in friends_names %}      
+        {% for friend_id in friends %}      
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ friend_name }}
+                {{ friends[friend_id] }}
                 <span>
-                    <button type="button" class="btn btn-success me-md-2">Chat</button>
-                    <button type="button" class="btn btn-danger">Remove</button>
+                    <a href="{{ url_for('startchat', friend_id=friend_id) }}" class="btn btn-success me-md-2" type="button" role="button"><Colg>Chat</Colg></a>             
+                    <a href="{{ url_for('friends_remove', friend_id=friend_id) }}" class="btn btn-outline-danger" type="button" role="button">Remove</a>             
                 </span>  
             </li>  
         {% endfor %}        

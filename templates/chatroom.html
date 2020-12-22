@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block main %} 
+      <div class="form-floating">
+        <textarea data-chat-id="{{group_id}}" id="messages" class="form-control" placeholder="Leave a comment here" id="floatingTextarea2" style="height: 100px"></textarea>
+        <!-- {% for row in rows %}
+            {% if row["user_id"] == user_id %}
+                <div id="user">
+                </div>    
+            <div id="friends">
+            </div>
+            {% endif %}
+        {% endfor %}     -->
+    </div>
+    <br>
+    <div class="input-group">     
+        <textarea class="form-control" aria-label="With textarea" id="content"></textarea>
+        <button class="btn btn-primary" onclick="get_content('{{group_id}}')">Send</button>
+    </div>
+    <script src="/static/chat.js"> </script>
+{% endblock %}

@@ -1,10 +1,11 @@
 import sqlite3 
-from flask import Flask, flash,  redirect, render_template, request, session, current_app, g
+from flask import Flask, flash,  redirect, render_template, request, session, current_app, g, jsonify
 from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import login_required
+import time
 
 # Configure application
 app = Flask(__name__)
@@ -49,6 +50,112 @@ app.teardown_appcontext(close_db)
 def index():
     return render_template("index.html") 
 
+
+@app.route("/start_chat/<friend_id>")
+@login_required
+def startchat(friend_id):    
+    db = get_db()
+    c = db.cursor()
+    
+    # See "a slow way" solution part to understand how to check if group exist or not"
+    try:
+        rows = c.execute(""" SELECT group_id FROM group_user WHERE user_id = ? AND group_id IN
+                      (SELECT group_id FROM group_user WHERE group_id IN
+                      (SELECT group_id FROM group_user WHERE user_id = ?)
+                      GROUP BY group_id
+                      HAVING count(user_id) =2 )""", [friend_id, session["user_id"]]).fetchall()
+
+        if len(rows) == 1:
+            return redirect(f'/chat/{rows[0]["group_id"]}')
+    except Exception as e:
+        print(e)
+        return "failed to check if group exists or not"    
+  
+
+    # A slow way help tp think of the sql query
+    # Use a boolean to check if the group is already exist or not 
+    #exist = False 
+    # try:
+    #     user_groups = c.execute("SELECT group_id FROM group_user WHERE user_id=?",[session["user_id"]]).fetchall()
+    #     for the_user_group in user_groups:
+    #         duplicate_groups = c.execute("SELECT group_id FROM group_user WHERE user_id=? AND group_id=?",
+    #                                      [friend_id, the_user_group["group_id"]]).fetchall()
+    #         for duplicate_group in duplicate_groups:
+    #             rows = c.execute("SELECT user_id FROM group_user WHERE group_id=?", duplicate_group["group_id"]).fetchall()
+    #             if len(rows) == 2:
+    #                 exist = True
+    #                 break 
+
+
+    name = f'{session["user_id"]}:{friend_id}'       
+    try:
+        c.execute("INSERT INTO group_ids(group_name) VALUES(?)",[name])
+        db.commit()
+        the_group_id = c.lastrowid
+        group_user_id = [(the_group_id, session["user_id"]), (the_group_id, friend_id)]
+        c.executemany("INSERT INTO group_user(group_id, user_id) VALUES (?, ?)", group_user_id)
+        db.commit()
+    except Exception as e:
+        print(e)
+        return "failed to make a chat group"
+
+    return redirect(f'/chat/{the_group_id}')
+
+
+@app.route("/chat/<group_id>")
+@login_required
+def chatroom(group_id):    
+    return render_template("chatroom.html", group_id = group_id)
+
+
+@app.route("/chatget/<group_id>", methods=["GET"])
+@login_required
+def chat_get(group_id): 
+
+    db = get_db()
+    c = db.cursor()
+    try:
+        rows = c.execute("SELECT content, user_id FROM messages WHERE group_id=? ORDER BY time ASC", 
+                [group_id]).fetchall()
+        check_new = c.lastrowid        
+    except Exception as e: 
+        print(e)
+        return "failed to get chat messages"        
+    # Make a list of object to keep data
+    output = []
+    for row in rows:
+        output.append({"content": row["content"], "user_id": row["user_id"]})
+    return jsonify(output)
+
+
+
+@app.route("/chatsave/<group_id>", methods=["POST"])
+@login_required
+def save_chat(group_id): 
+
+    # Connect db, save the chatroom to db
+    db = get_db()
+    c = db.cursor()
+    content = request.json.get("value")
+
+    # Check if the content has value or not
+    if not content:
+        return "", 200
+
+    # python time.time() 返回当前时间的时间戳（1970纪元后经过的浮点秒数）
+    message_time = int(time.time()) 
+
+    try:
+        c.execute ("INSERT INTO messages (time, content, user_id, group_id) VALUES (?, ?, ?, ?)",
+                   [message_time, content, session["user_id"], group_id])
+        db.commit()
+    except Exception as e: 
+            print(e)
+            return "failed to save the message" 
+  
+    # Flask return status code only 200/201 (success/created)
+    return "", 201
+        
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -185,9 +292,10 @@ def friends():
                 return "failed to get friend requesters"
 
     #--------get friends list part----------
+    # Create a dictionary use friends_ids as key to friends_names
     # Create 2 lists to keep user's friends names and ids
+    friends = {}
     friends_ids = []
-    friends_names = []
 
     # Get all user's friends from friends_list table   
     try:
@@ -204,7 +312,8 @@ def friends():
     for friend_id in friends_ids:
         try:
             friends_rows = c.execute("SELECT username FROM users WHERE id=?", [friend_id]).fetchall()
-            friends_names.append(friends_rows[0]["username"])
+            friends[friend_id] = friends_rows[0]["username"]
+
         # Can print db err in terminal
         except Exception as e: 
             print(e)
@@ -259,7 +368,7 @@ def friends():
     add_success = request.args.get("add_success") == "true"
     
     return render_template("friends.html", add_success = add_success, 
-                            senders = senders, friends_names = friends_names, 
+                            senders = senders, friends = friends, 
                             related_results = related_results, bool = bool,
                             are_friends = are_friends, not_yet = not_yet, 
                             search_name = search_name, userself = userself)    
@@ -314,6 +423,30 @@ def friends_add():
         return render_template("friends_add.html")       
 
 
+@app.route("/friends/remove/<friend_id>")
+@login_required
+def friends_remove(friend_id):
+
+    #  Delete each other from their friends list
+    db = get_db()
+    c = db.cursor()
+    try:
+        c.execute("DELETE FROM friends_list WHERE fone=? AND ftwo=?",
+                      [friend_id, session["user_id"]])
+        db.commit()
+        c.execute("DELETE FROM friends_list WHERE fone=? AND ftwo=?",
+                      [session["user_id"], friend_id])
+        db.commit()
+    except sqlite3.IntegrityError:
+        pass     
+    except Exception as e: 
+        print(e)
+        return "failed to remove friend"
+
+    # Redirect user to friends page
+    return redirect("/friends")          
+
+
 @app.route("/friends/sendfrequest/<the_to_id>")
 @login_required
 def friends_send_request(the_to_id):   
@@ -333,6 +466,7 @@ def friends_send_request(the_to_id):
 
     # Redirect user to friends_add page
     return redirect("/friends?add_success=true")                
+
 
 @app.route("/friends/accept/<sender_id>")
 @login_required
@@ -358,6 +492,8 @@ def friends_accept(sender_id):
         c.execute("DELETE FROM friends_add WHERE from_id=? AND to_id=?",
                       [session["user_id"], sender_id])
         db.commit()
+    except sqlite3.IntegrityError:
+        pass     
     except Exception as e: 
         print(e)
         return "failed to add to friends list(2)"    

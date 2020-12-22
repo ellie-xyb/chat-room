@@ -10,6 +10,9 @@ def init_db():
     with io.open('schema.sql', mode="r", encoding="utf-8") as f:
         db.executescript(f.read())
     
+    with io.open('test-data.sql', mode="r", encoding="utf-8") as f:
+        db.executescript(f.read())
+    
     db.close()
 
 init_db()

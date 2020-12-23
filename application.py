@@ -105,7 +105,8 @@ def startchat(friend_id):
 @app.route("/chat/<group_id>")
 @login_required
 def chatroom(group_id):    
-    return render_template("chatroom.html", group_id = group_id)
+    user_id = session["user_id"]
+    return render_template("chatroom.html", group_id = group_id, user_id = user_id)
 
 
 @app.route("/chatget/<group_id>", methods=["GET"])
@@ -125,6 +126,7 @@ def chat_get(group_id):
     output = []
     for row in rows:
         output.append({"content": row["content"], "user_id": row["user_id"]})
+    # Make a json string to keep all the data and return(response to the request) 
     return jsonify(output)
 
 

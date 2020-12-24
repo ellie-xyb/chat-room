@@ -97,17 +97,30 @@ def startchat(friend_id):
         db.commit()
     except Exception as e:
         print(e)
-        return "failed to make a chat group"
+        return "failed to make a chat group Or not support to chat with yourself yet"
 
     return redirect(f'/chat/{the_group_id}')
 
 
 @app.route("/chat/<group_id>")
 @login_required
-def chatroom(group_id):    
+def chatroom(group_id):   
     user_id = session["user_id"]
-    return render_template("chatroom.html", group_id = group_id, user_id = user_id)
+    db = get_db()
+    c = db.cursor()
+    try:
+        #  Get friend's id and name from db, and pass them to the html
+        rows = c.execute("SELECT user_id FROM group_user WHERE group_id=? AND user_id<>?", 
+                        [group_id, user_id]).fetchall()
+        friend_id = rows[0]["user_id"]
+        name_rows = c.execute("SELECT username FROM users WHERE id=?", [friend_id]).fetchall()
+        friend_name = name_rows[0]["username"]
+    except Exception as e: 
+        print(e)
+        return "failed to get friend's id and name" 
 
+    return render_template("chatroom.html", user_id = user_id, group_id = group_id, friend_name = friend_name)        
+  
 
 @app.route("/chatget/<group_id>", methods=["GET"])
 @login_required

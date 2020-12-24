@@ -1,9 +1,9 @@
 {% extends "layout.html" %}
 
 {% block main %} 
-    <div class="border border-info border-2 rounded-top"> 
-        <div id="user_m" data-user-id="{{user_id}}" class="blockquote"></div>
-        <div id="friend_m" data-group-id="{{group_id}}" class="text-end blockquote"></div>
+    <div class="rounded border-1 border border-success bg-success" id="main_div" data-friend-name="{{friend_name}}" data-group-id="{{group_id}}" data-user-id="{{user_id}}"> 
+        <div id="messages" class="blockquote"></div>
+        <!-- <div class="text-end blockquote"></div> -->
     </div>
     
     <!-- <div class="form-floating">
@@ -12,7 +12,7 @@
     <br>
     <div class="input-group">     
         <textarea class="form-control" aria-label="With textarea" id="content"></textarea>
-        <button class="btn btn-primary" onclick="get_content('{{group_id}}')">Send</button>
+        <button class="btn btn-success" onclick="get_content('{{group_id}}')">Send</button>
     </div>
     <script src="/static/chat.js"> </script>
 {% endblock %}

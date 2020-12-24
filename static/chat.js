@@ -20,13 +20,11 @@ function get_chat() {
 
     // Use js getAttribute() to get group_id from the html page
 
-    // Get the user_id from chatroom.html
-    let user_div = document.getElementById("user_m");
-    let user_id = user_div.getAttribute("data-user-id");
-
-    // // Get the group_id from html
-    let friend_div = document.getElementById("friend_m");
-    let group_id = friend_div.getAttribute("data-group-id");
+    // Get the user_id,group_id,friend_name from chatroom.html
+    let mainDiv = document.getElementById("main_div");
+    let user_id = mainDiv.getAttribute("data-user-id");
+    let group_id = mainDiv.getAttribute("data-group-id");
+    let friend_name = mainDiv.getAttribute("data-friend-name");
 
     // Create an arry to keep the json response of messages and user_ids
     let result = [];
@@ -43,8 +41,7 @@ function get_chat() {
             result = JSON.parse(xhr.responseText);
 
             // clean the div first
-            document.getElementById("user_m").innerHTML = "";
-            document.getElementById("friend_m").innerHTML = "";
+            document.getElementById("messages").innerHTML = "";
 
             // Add messages history to the div
             let n = result.length;
@@ -52,15 +49,31 @@ function get_chat() {
                 var id = result[i]["user_id"];
 
                 // Make a each new div to keep message 
-                let newDiv = document.createElement("div");
-                let newContent = document.createTextNode(`${result[i]["user_id"]}: ${result[i]["content"]}`);
-                newDiv.appendChild(newContent);
+                let messageDiv = document.getElementById("messages");
+                let newDiv;
+                let newContent;
 
-                if (id == user_id) {
-                    user_div.appendChild(newDiv);
+
+                if (id != user_id) {
+                    newDiv = document.createElement("div");
+                    newContent = document.createTextNode(`${result[i]["content"]}`);
+
+                    let att = document.createAttribute("class");                     // Create a "class" attribute
+                    att.value = "fst-italic p-3 border-bottom text-success bg-light";           // Set the value of the class attribute
+                    newDiv.setAttributeNode(att);
+
+                    newDiv.appendChild(newContent);
                 } else {
-                    friend_div.appendChild(newDiv);
+                    newDiv = document.createElement("div");
+                    newContent = document.createTextNode(`${result[i]["content"]} (${friend_name})`);
+
+                    let att = document.createAttribute("class");                                // Create a "class" attribute
+                    att.value = "text-end fw-bold p-3 border-bottom text-info bg-light";    // Set the value of the class attribute
+                    newDiv.setAttributeNode(att);
+
+                    newDiv.appendChild(newContent);
                 }
+                messageDiv.appendChild(newDiv);
             }
         }
     }

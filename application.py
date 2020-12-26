@@ -68,8 +68,12 @@ def index():
             groups_list[group["group_id"]] = names[0]["username"] 
     except Exception as e:
         print(e)
-        return "failed to make groups' list"              
-    return render_template("index.html", groups_list = groups_list) 
+        return "failed to make groups' list"   
+
+    show = False
+    if not groups_list :
+        show = True         
+    return render_template("index.html", groups_list = groups_list, show = show) 
 
 
 @app.route("/start_chat/<friend_id>")

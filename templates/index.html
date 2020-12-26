@@ -1,6 +1,13 @@
 {% extends "layout.html" %}
 
 {% block main %}
+    {% if show %}
+        <figure class="figure">
+            <a href="/friends" class="fs-4 fst-italic lead text-center"><figcaption class="figure-caption text-success">Welcome to Chat-Room! Start by adding friends.</figcaption></a>
+            <img src="/static/home.jpg" class="figure-img img-fluid rounded" alt="a pleasant pic to start chat group">
+        </figure> 
+    {% endif %}    
+    <br>
     <ul class="list-group">
         {% for group_id in groups_list %}
             <li class="list-group-item d-flex justify-content-between align-items-center">    

@@ -12,7 +12,20 @@
     <br>
     <div class="input-group">     
         <textarea class="form-control" aria-label="With textarea" id="content"></textarea>
-        <button class="btn btn-success" onclick="get_content('{{group_id}}')">Send</button>
+        <button class="btn btn-success" onclick="get_content('{{group_id}}')" id="send_button">Send</button>
     </div>
     <script src="/static/chat.js"> </script>
+    <script>
+        var input = document.getElementById("content");
+        input.addEventListener("keyup", function(event) {
+        // Number 13 is the "Enter" key on the keyboard
+        if (event.keyCode === 13 && !event.shiftKey) {
+            // Cancel the default action, if needed
+            event.preventDefault();
+           // Trigger the button element with a click
+            document.getElementById("send_button").click();
+            }
+        });
+    </script>
+        
 {% endblock %}

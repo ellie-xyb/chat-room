@@ -11,4 +11,11 @@
     color: rgb(236, 18, 18);
 }
 
+/* div max height scroll */
+/* id-#, class-. */
+#messages
+{
+    overflow-y: scroll;
+    height:60vh; 
 
+}

@@ -45,10 +45,31 @@ def close_db(e=None):
 # call the close_db function when finish each querry
 app.teardown_appcontext(close_db)
 
+# Make the home page, show user's chat groups
 @app.route('/')
 @login_required
 def index():
-    return render_template("index.html") 
+    groups_list = {}
+    user_id = session["user_id"]
+
+    # Connect db
+    #  63,64line, WHERE column_2 IN (1,2,3);
+    db = get_db()
+    c = db.cursor()
+    try:
+        groups = c.execute("""SELECT group_id, user_id FROM group_user WHERE group_id IN 
+                           (SELECT group_id FROM group_user WHERE user_id=?)
+                            AND (user_id IN (SELECT fone FROM friends_list WHERE ftwo=?) 
+                            OR user_id IN (SELECT ftwo FROM friends_list WHERE fone=?))""", 
+                            [user_id, user_id, user_id]).fetchall()
+        for group in groups:
+            names = c.execute("SELECT username FROM users WHERE id=?", [group["user_id"]]).fetchall()  
+            # Make a dictionary (also called object), group_id is the key, friend's name is the value 
+            groups_list[group["group_id"]] = names[0]["username"] 
+    except Exception as e:
+        print(e)
+        return "failed to make groups' list"              
+    return render_template("index.html", groups_list = groups_list) 
 
 
 @app.route("/start_chat/<friend_id>")
@@ -56,7 +77,6 @@ def index():
 def startchat(friend_id):    
     db = get_db()
     c = db.cursor()
-    
     # See "a slow way" solution part to understand how to check if group exist or not"
     try:
         rows = c.execute(""" SELECT group_id FROM group_user WHERE user_id = ? AND group_id IN
